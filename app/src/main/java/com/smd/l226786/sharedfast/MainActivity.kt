@@ -20,6 +20,7 @@ import com.smd.l226786.sharedfast.databinding.ActivityMainBinding
 import com.smd.l226786.sharedfast.models.Folder
 import java.io.File
 import androidx.core.net.toUri
+import androidx.core.content.FileProvider
 
 class MainActivity : AppCompatActivity() {
 
@@ -99,13 +100,18 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun shareFolder(folder: Folder) {
-        val folderPath = File(getExternalFilesDir(null), folder.name).absolutePath
+        val folderPath = File(getExternalFilesDir(null), folder.name)
+        val imageUris = folderPath.listFiles { file -> file.extension == "jpg" }?.map { file ->
+            FileProvider.getUriForFile(this, "com.smd.l226786.sharedfast.provider", file)
+        } ?: emptyList()
+
         val shareIntent = Intent().apply {
-            action = Intent.ACTION_SEND
-            putExtra(Intent.EXTRA_STREAM, folderPath.toUri())
-            type = "application/zip"
+            action = Intent.ACTION_SEND_MULTIPLE
+            putParcelableArrayListExtra(Intent.EXTRA_STREAM, ArrayList(imageUris))
+            type = "image/jpeg"
+            addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
         }
-        startActivity(Intent.createChooser(shareIntent, "Share Folder"))
+        startActivity(Intent.createChooser(shareIntent, "Share Images"))
     }
 
     private fun deleteFolder(folder: Folder) {
