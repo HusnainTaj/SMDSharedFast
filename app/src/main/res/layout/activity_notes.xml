@@ -30,20 +30,26 @@
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_weight="1"
-            android:text="Import Files" />
+            android:text="Import Files"
+            app:cornerRadius="0dp"
+            />
+
 
         <Button
             android:id="@+id/import_images_button"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
+            android:layout_marginHorizontal="2dp"
             android:layout_weight="1"
-            android:text="Import Images" />
+            android:text="Import Images"
+            app:cornerRadius="0dp" />
 
         <Button
             android:id="@+id/capture_image_button"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_weight="1"
+            app:cornerRadius="0dp"
             android:text="Capture Image" />
     </LinearLayout>
 
