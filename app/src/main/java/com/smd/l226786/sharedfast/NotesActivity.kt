@@ -41,7 +41,7 @@ class NotesActivity : AppCompatActivity() {
                 val imageData = byteArrayOutputStream.toByteArray()
 
                 val newNote = Notes.createNote(
-                    context = this,
+                    context = applicationContext,
                     folderName = folderName,
                     title = "Note ${System.currentTimeMillis()}",
                     fileData = imageData,
@@ -49,7 +49,7 @@ class NotesActivity : AppCompatActivity() {
                     extension = "jpg"
                 )
 
-                newNote?.let { 
+                newNote?.let {
                     refreshNotesList()
                 }
             }
