@@ -1,13 +1,28 @@
 package com.smd.l226786.sharedfast.models
 
-data class Folder(val id: Int, val name: String) {
+import android.content.Context
+import java.io.File
+
+data class Folder(val name: String) {
     companion object {
-        val folderList = mutableListOf<Folder>(
-            Folder(1, "Folder 1"),
-            Folder(2, "Folder 2"),
-            Folder(3, "Folder 3"),
-            Folder(4, "Folder 4"),
-            Folder(5, "Folder 5")
-        )
+        fun getFolders(context: Context): List<Folder> {
+            val folders = mutableListOf<Folder>()
+            val rootDir = context.getExternalFilesDir(null)
+            rootDir?.listFiles()?.forEach { file ->
+                if (file.isDirectory) {
+                    folders.add(Folder(file.name))
+                }
+            }
+            return folders
+        }
+
+        fun createFolder(context: Context, folderName: String): Folder? {
+            val newFolder = File(context.getExternalFilesDir(null)?.absolutePath + "/$folderName")
+            return if (newFolder.mkdirs()) {
+                Folder(folderName)
+            } else {
+                null
+            }
+        }
     }
 }

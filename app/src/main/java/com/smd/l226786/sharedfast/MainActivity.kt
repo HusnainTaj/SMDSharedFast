@@ -22,7 +22,7 @@ class MainActivity : AppCompatActivity() {
 
     private lateinit var appBarConfiguration: AppBarConfiguration
     private lateinit var binding: ActivityMainBinding
-    private lateinit var folderAdapter: ArrayAdapter<Folder>
+    private lateinit var folderAdapter: ArrayAdapter<String>
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -32,14 +32,14 @@ class MainActivity : AppCompatActivity() {
 
         setSupportActionBar(binding.toolbar)
 
-        folderAdapter = ArrayAdapter(this, android.R.layout.simple_list_item_1, Folder.folderList)
+        folderAdapter = ArrayAdapter(this, android.R.layout.simple_list_item_1, Folder.getFolders(this).map { it.name })
         val listView: ListView = findViewById(R.id.folder_list_view)
         listView.adapter = folderAdapter
 
         listView.setOnItemClickListener { _, _, position, _ ->
-            val selectedFolder = Folder.folderList[position]
+            val selectedFolder = Folder.getFolders(this)[position]
             val intent = Intent(this, NotesActivity::class.java).apply {
-                putExtra("FOLDER_ID", selectedFolder.id)
+                putExtra("FOLDER_NAME", selectedFolder.name)
             }
             startActivity(intent)
         }
@@ -62,9 +62,12 @@ class MainActivity : AppCompatActivity() {
             dialog.dismiss()
             val folderName = input.text.toString()
             if (folderName.isNotEmpty()) {
-                val newFolder = Folder(Folder.folderList.size + 1, folderName)
-                Folder.folderList.add(newFolder)
-                folderAdapter.notifyDataSetChanged()
+                val newFolder = Folder.createFolder(this, folderName)
+                newFolder?.let {
+                    folderAdapter.add(it.name)
+                    folderAdapter.notifyDataSetChanged()
+                    Snackbar.make(binding.root, "Folder '$folderName' created", Snackbar.LENGTH_SHORT).show()
+                }
             }
         }
         builder.setNegativeButton(android.R.string.cancel) { dialog, _ -> dialog.cancel() }

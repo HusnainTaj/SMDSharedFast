@@ -20,48 +20,60 @@ import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
 import com.bumptech.glide.Glide
 import com.smd.l226786.sharedfast.models.Notes
+import java.io.ByteArrayOutputStream
 import java.io.File
+import java.io.InputStream
 
 class NotesActivity : AppCompatActivity() {
 
     private lateinit var notesAdapter: NotesAdapter
-    private var folderId: Int = -1
+    private var folderName: String = ""
 
     private val pickImagesLauncher = registerForActivityResult(ActivityResultContracts.GetMultipleContents()) { uris: List<Uri> ->
         if (uris.isNotEmpty()) {
             uris.forEach { uri ->
-                val newNote = Notes(
-                    id = Notes.notesList.size + 1,
-                    title = "New Note",
-                    timestamp = System.currentTimeMillis(),
-                    image = uri.toString(),
-                    folderId = folderId
+                val inputStream: InputStream? = contentResolver.openInputStream(uri)
+                val byteArrayOutputStream = ByteArrayOutputStream()
+                inputStream?.copyTo(byteArrayOutputStream)
+                val imageData = byteArrayOutputStream.toByteArray()
+
+                val newNote = Notes.createNote(
+                    context = this,
+                    folderName = folderName,
+                    title = "Note ${System.currentTimeMillis()}",
+                    imageData = imageData
                 )
-                Notes.notesList.add(newNote)
+
+                newNote?.let { 
+                    val updatedNotes = Notes.getNotes(this, folderName)
+                    notesAdapter.clear()
+                    notesAdapter.addAll(updatedNotes)
+                    notesAdapter.notifyDataSetChanged()
+                }
             }
-            // Refresh the adapter with the updated notes list
-            val updatedNotes = Notes.notesList.filter { it.folderId == folderId }
-            notesAdapter.clear()
-            notesAdapter.addAll(updatedNotes)
-            notesAdapter.notifyDataSetChanged()
         }
     }
 
     private val captureImageLauncher = registerForActivityResult(ActivityResultContracts.TakePicture()) { success: Boolean ->
         if (success) {
-            val newNote = Notes(
-                id = Notes.notesList.size + 1,
-                title = "New Note",
-                timestamp = System.currentTimeMillis(),
-                image = currentPhotoUri.toString(),
-                folderId = folderId
+            val inputStream: InputStream? = contentResolver.openInputStream(currentPhotoUri)
+            val byteArrayOutputStream = ByteArrayOutputStream()
+            inputStream?.copyTo(byteArrayOutputStream)
+            val imageData = byteArrayOutputStream.toByteArray()
+
+            val newNote = Notes.createNote(
+                context = this,
+                folderName = folderName,
+                title = "Note ${System.currentTimeMillis()}",
+                imageData = imageData
             )
-            Notes.notesList.add(newNote)
-            // Refresh the adapter with the updated notes list
-            val updatedNotes = Notes.notesList.filter { it.folderId == folderId }
-            notesAdapter.clear()
-            notesAdapter.addAll(updatedNotes)
-            notesAdapter.notifyDataSetChanged()
+
+            newNote?.let { 
+                val updatedNotes = Notes.getNotes(this, folderName)
+                notesAdapter.clear()
+                notesAdapter.addAll(updatedNotes)
+                notesAdapter.notifyDataSetChanged()
+            }
         }
     }
 
@@ -96,8 +108,8 @@ class NotesActivity : AppCompatActivity() {
             insets
         }
 
-        folderId = intent.getIntExtra("FOLDER_ID", -1)
-        val filteredNotes = Notes.notesList.filter { it.folderId == folderId }
+        folderName = intent.getStringExtra("FOLDER_NAME") ?: ""
+        val filteredNotes = Notes.getNotes(this, folderName)
 
         notesAdapter = NotesAdapter(filteredNotes)
         val listView: ListView = findViewById(R.id.notes_list_view)
