@@ -3,7 +3,7 @@ package com.smd.l226786.sharedfast.models
 import android.content.Context
 import java.io.File
 
-data class Folder(val name: String) {
+data class Folder(var name: String) {
     companion object {
         fun getFolders(context: Context): List<Folder> {
             val folders = mutableListOf<Folder>()
@@ -31,4 +31,3 @@ data class Folder(val name: String) {
         }
     }
 }
-

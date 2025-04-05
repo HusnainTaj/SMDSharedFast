@@ -159,17 +159,52 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun showFolderOptionsDialog(folder: Folder) {
-        val options = arrayOf("Share", "Delete")
+        val options = arrayOf("Share", "Rename", "Delete")
         val builder = AlertDialog.Builder(this)
         builder.setTitle("Folder Options")
         builder.setItems(options) { dialog, which ->
             when (which) {
                 0 -> shareFolder(folder)
-                1 -> deleteFolder(folder)
+                1 -> showRenameFolderDialog(folder)
+                2 -> deleteFolder(folder)
             }
             dialog.dismiss()
         }
         builder.show()
+    }
+
+    private fun showRenameFolderDialog(folder: Folder) {
+        val builder = AlertDialog.Builder(this)
+        builder.setTitle("Rename Folder")
+
+        val viewInflated = LayoutInflater.from(this).inflate(R.layout.dialog_create_folder, null, false)
+        val input = viewInflated.findViewById<EditText>(R.id.input_folder_name)
+        input.setText(folder.name)
+
+        builder.setView(viewInflated)
+
+        builder.setPositiveButton(android.R.string.ok) { dialog, _ ->
+            dialog.dismiss()
+            val newFolderName = input.text.toString()
+            if (newFolderName.isNotEmpty() && newFolderName != folder.name) {
+                renameFolder(folder, newFolderName)
+            }
+        }
+        builder.setNegativeButton(android.R.string.cancel) { dialog, _ -> dialog.cancel() }
+
+        builder.show()
+    }
+
+    private fun renameFolder(folder: Folder, newFolderName: String) {
+        val oldFolderPath = File(getExternalFilesDir(null), folder.name)
+        val newFolderPath = File(getExternalFilesDir(null), newFolderName)
+        if (oldFolderPath.renameTo(newFolderPath)) {
+            folder.name = newFolderName
+            filterFolders(searchEditText.text.toString())
+            Snackbar.make(binding.root, "Folder renamed to '$newFolderName'", Snackbar.LENGTH_SHORT).show()
+        } else {
+            Snackbar.make(binding.root, "Failed to rename folder", Snackbar.LENGTH_SHORT).show()
+        }
     }
 
     private fun shareFolder(folder: Folder) {
