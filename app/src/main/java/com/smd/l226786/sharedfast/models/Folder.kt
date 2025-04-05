@@ -24,5 +24,11 @@ data class Folder(val name: String) {
                 null
             }
         }
+
+        fun getThumbnail(context: Context, folderName: String): String? {
+            val notes = Notes.getNotes(context, folderName)
+            return if (notes.isNotEmpty()) notes[0].image else null
+        }
     }
 }
+

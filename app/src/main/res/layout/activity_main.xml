@@ -23,13 +23,17 @@
 
     </com.google.android.material.appbar.AppBarLayout>
 
-    <ListView
-        android:id="@+id/folder_list_view"
+    <GridView
+        android:id="@+id/folder_grid_view"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:layout_weight="1"
         android:fitsSystemWindows="true"
-        android:padding="16dp" />
+        android:padding="16dp"
+        android:numColumns="2"
+        android:verticalSpacing="16dp"
+        android:horizontalSpacing="16dp"
+        android:stretchMode="columnWidth" />
    </LinearLayout>
 
     <com.google.android.material.floatingactionbutton.FloatingActionButton
