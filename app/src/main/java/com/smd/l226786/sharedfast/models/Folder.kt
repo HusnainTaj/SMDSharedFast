@@ -29,5 +29,21 @@ data class Folder(var name: String) {
             val notes = Notes.getNotes(context, folderName)
             return if (notes.isNotEmpty()) notes[0].image else null
         }
+
+        fun renameFolder(context: Context, folder: Folder, newFolderName: String): Boolean {
+            val oldFolderPath = File(context.getExternalFilesDir(null), folder.name)
+            val newFolderPath = File(context.getExternalFilesDir(null), newFolderName)
+            return if (oldFolderPath.renameTo(newFolderPath)) {
+                folder.name = newFolderName
+                true
+            } else {
+                false
+            }
+        }
+
+        fun deleteFolder(context: Context, folder: Folder): Boolean {
+            val folderPath = File(context.getExternalFilesDir(null), folder.name)
+            return folderPath.deleteRecursively()
+        }
     }
 }

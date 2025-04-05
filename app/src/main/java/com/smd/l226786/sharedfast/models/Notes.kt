@@ -74,6 +74,22 @@ data class Notes(
             }
             return null
         }
+
+        fun renameNote(context: Context, note: Notes, newNoteTitle: String): Boolean {
+            val oldNoteFile = File(note.image)
+            val newNoteFile = File(oldNoteFile.parent, "$newNoteTitle.${oldNoteFile.extension}")
+            return if (oldNoteFile.renameTo(newNoteFile)) {
+                note.title = newNoteTitle
+                note.image = newNoteFile.absolutePath
+                true
+            } else {
+                false
+            }
+        }
+
+        fun deleteNote(context: Context, note: Notes): Boolean {
+            val noteFile = File(note.image)
+            return noteFile.delete()
+        }
     }
 }
-

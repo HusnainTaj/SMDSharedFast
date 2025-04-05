@@ -27,6 +27,7 @@ import androidx.core.view.WindowInsetsCompat
 import com.bumptech.glide.Glide
 import com.google.android.material.snackbar.Snackbar
 import com.smd.l226786.sharedfast.models.Notes
+import com.smd.l226786.sharedfast.adapters.NotesAdapter
 import java.io.ByteArrayOutputStream
 import java.io.File
 import java.io.InputStream
@@ -113,25 +114,6 @@ class NotesActivity : AppCompatActivity() {
 
     private lateinit var currentPhotoUri: Uri
 
-    private inner class NotesAdapter(notes: List<Notes>) : ArrayAdapter<Notes>(this@NotesActivity, 0, notes) {
-        override fun getView(position: Int, convertView: View?, parent: ViewGroup): View {
-            val view = convertView ?: layoutInflater.inflate(R.layout.item_note, parent, false)
-            val note = getItem(position)
-
-            val imageView = view.findViewById<ImageView>(R.id.note_image)
-            val titleView = view.findViewById<TextView>(R.id.note_title)
-            val timestampView = view.findViewById<TextView>(R.id.note_timestamp)
-
-            note?.let {
-                Glide.with(this@NotesActivity).load(it.image).into(imageView)
-                titleView.text = it.title
-                timestampView.text = android.text.format.DateFormat.format("yyyy-MM-dd hh:mm:ss", it.timestamp)
-            }
-
-            return view
-        }
-    }
-
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
@@ -146,7 +128,7 @@ class NotesActivity : AppCompatActivity() {
         allNotes = Notes.getNotes(this, folderName)
         filteredNotes = allNotes.toMutableList()
 
-        notesAdapter = NotesAdapter(filteredNotes)
+        notesAdapter = NotesAdapter(this, filteredNotes)
         val listView: ListView = findViewById(R.id.notes_list_view)
         listView.adapter = notesAdapter
 
@@ -224,7 +206,15 @@ class NotesActivity : AppCompatActivity() {
         builder.setItems(options) { dialog, which ->
             when (which) {
                 0 -> showRenameNoteDialog(note)
-                1 -> deleteNote(note)
+                1 -> {
+                    if (Notes.deleteNote(this, note)) {
+                        allNotes = allNotes.filter { it.id != note.id }
+                        filterNotes(searchEditText.text.toString())
+                        Snackbar.make(findViewById(R.id.main), "Note '${note.title}' deleted", Snackbar.LENGTH_SHORT).show()
+                    } else {
+                        Snackbar.make(findViewById(R.id.main), "Failed to delete note '${note.title}'", Snackbar.LENGTH_SHORT).show()
+                    }
+                }
             }
             dialog.dismiss()
         }
@@ -245,35 +235,17 @@ class NotesActivity : AppCompatActivity() {
             dialog.dismiss()
             val newNoteTitle = input.text.toString()
             if (newNoteTitle.isNotEmpty() && newNoteTitle != note.title) {
-                renameNote(note, newNoteTitle)
+                if (Notes.renameNote(this, note, newNoteTitle)) {
+                    refreshNotesList()
+                    Snackbar.make(findViewById(R.id.main), "Note renamed to '$newNoteTitle'", Snackbar.LENGTH_SHORT).show()
+                } else {
+                    Snackbar.make(findViewById(R.id.main), "Failed to rename note", Snackbar.LENGTH_SHORT).show()
+                }
             }
         }
         builder.setNegativeButton(android.R.string.cancel) { dialog, _ -> dialog.cancel() }
 
         builder.show()
     }
-
-    private fun renameNote(note: Notes, newNoteTitle: String) {
-        val oldNoteFile = File(note.image)
-        val newNoteFile = File(oldNoteFile.parent, "$newNoteTitle.${oldNoteFile.extension}")
-        if (oldNoteFile.renameTo(newNoteFile)) {
-            note.title = newNoteTitle
-            note.image = newNoteFile.absolutePath
-            refreshNotesList()
-            Snackbar.make(findViewById(R.id.main), "Note renamed to '$newNoteTitle'", Snackbar.LENGTH_SHORT).show()
-        } else {
-            Snackbar.make(findViewById(R.id.main), "Failed to rename note", Snackbar.LENGTH_SHORT).show()
-        }
-    }
-
-    private fun deleteNote(note: Notes) {
-        val noteFile = File(note.image)
-        if (noteFile.delete()) {
-            allNotes = allNotes.filter { it.id != note.id }
-            filterNotes(searchEditText.text.toString())
-            Snackbar.make(findViewById(R.id.main), "Note '${note.title}' deleted", Snackbar.LENGTH_SHORT).show()
-        } else {
-            Snackbar.make(findViewById(R.id.main), "Failed to delete note '${note.title}'", Snackbar.LENGTH_SHORT).show()
-        }
-    }
 }
+

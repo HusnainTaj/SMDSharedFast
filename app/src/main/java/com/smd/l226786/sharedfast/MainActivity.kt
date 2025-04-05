@@ -27,42 +27,15 @@ import com.smd.l226786.sharedfast.databinding.ActivityMainBinding
 import com.smd.l226786.sharedfast.models.Folder
 import java.io.File
 import androidx.core.content.FileProvider
+import com.smd.l226786.sharedfast.adapters.FolderAdapter
 
 class MainActivity : AppCompatActivity() {
 
-    private lateinit var appBarConfiguration: AppBarConfiguration
     private lateinit var binding: ActivityMainBinding
     private lateinit var folderAdapter: FolderAdapter
     private var folders = mutableListOf<Folder>()
     private var filteredFolders = mutableListOf<Folder>()
     private lateinit var searchEditText: EditText
-
-    private inner class FolderAdapter : BaseAdapter() {
-        override fun getCount(): Int = filteredFolders.size
-
-        override fun getItem(position: Int): Any = filteredFolders[position]
-
-        override fun getItemId(position: Int): Long = position.toLong()
-
-        override fun getView(position: Int, convertView: View?, parent: ViewGroup): View {
-            val view = convertView ?: layoutInflater.inflate(R.layout.item_folder, parent, false)
-            val folder = getItem(position) as Folder
-
-            val thumbnailView = view.findViewById<ImageView>(R.id.folder_thumbnail)
-            val titleView = view.findViewById<TextView>(R.id.folder_title)
-
-            titleView.text = folder.name
-            
-            val thumbnail = Folder.getThumbnail(this@MainActivity, folder.name)
-            if (thumbnail != null) {
-                Glide.with(this@MainActivity).load(thumbnail).into(thumbnailView)
-            } else {
-                Glide.with(this@MainActivity).load(R.drawable.placeholder).into(thumbnailView)
-            }
-
-            return view
-        }
-    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -73,7 +46,7 @@ class MainActivity : AppCompatActivity() {
         folders = Folder.getFolders(this).toMutableList()
         filteredFolders = folders.toMutableList()
         
-        folderAdapter = FolderAdapter()
+        folderAdapter = FolderAdapter(this, filteredFolders)
         val gridView: GridView = findViewById(R.id.folder_grid_view)
         gridView.adapter = folderAdapter
 
@@ -149,7 +122,7 @@ class MainActivity : AppCompatActivity() {
                 newFolder?.let {
                     folders.add(it)
                     filterFolders(searchEditText.text.toString())
-                    Snackbar.make(binding.root, "Folder '$folderName' created", Snackbar.LENGTH_SHORT).show()
+                    Snackbar.make(binding.root, "Folder '$folderName' created!", Snackbar.LENGTH_SHORT).show()
                 }
             }
         }
@@ -166,7 +139,15 @@ class MainActivity : AppCompatActivity() {
             when (which) {
                 0 -> shareFolder(folder)
                 1 -> showRenameFolderDialog(folder)
-                2 -> deleteFolder(folder)
+                2 -> {
+                    if (Folder.deleteFolder(this, folder)) {
+                        folders.remove(folder)
+                        filterFolders(searchEditText.text.toString())
+                        Snackbar.make(binding.root, "Folder '${folder.name}' deleted", Snackbar.LENGTH_SHORT).show()
+                    } else {
+                        Snackbar.make(binding.root, "Failed to delete folder '${folder.name}'", Snackbar.LENGTH_SHORT).show()
+                    }
+                }
             }
             dialog.dismiss()
         }
@@ -187,24 +168,17 @@ class MainActivity : AppCompatActivity() {
             dialog.dismiss()
             val newFolderName = input.text.toString()
             if (newFolderName.isNotEmpty() && newFolderName != folder.name) {
-                renameFolder(folder, newFolderName)
+                if (Folder.renameFolder(this, folder, newFolderName)) {
+                    filterFolders(searchEditText.text.toString())
+                    Snackbar.make(binding.root, "Folder renamed to '$newFolderName'", Snackbar.LENGTH_SHORT).show()
+                } else {
+                    Snackbar.make(binding.root, "Failed to rename folder", Snackbar.LENGTH_SHORT).show()
+                }
             }
         }
         builder.setNegativeButton(android.R.string.cancel) { dialog, _ -> dialog.cancel() }
 
         builder.show()
-    }
-
-    private fun renameFolder(folder: Folder, newFolderName: String) {
-        val oldFolderPath = File(getExternalFilesDir(null), folder.name)
-        val newFolderPath = File(getExternalFilesDir(null), newFolderName)
-        if (oldFolderPath.renameTo(newFolderPath)) {
-            folder.name = newFolderName
-            filterFolders(searchEditText.text.toString())
-            Snackbar.make(binding.root, "Folder renamed to '$newFolderName'", Snackbar.LENGTH_SHORT).show()
-        } else {
-            Snackbar.make(binding.root, "Failed to rename folder", Snackbar.LENGTH_SHORT).show()
-        }
     }
 
     private fun shareFolder(folder: Folder) {
@@ -222,20 +196,9 @@ class MainActivity : AppCompatActivity() {
         startActivity(Intent.createChooser(shareIntent, "Share Images"))
     }
 
-    private fun deleteFolder(folder: Folder) {
-        val folderPath = File(getExternalFilesDir(null), folder.name)
-        if (folderPath.deleteRecursively()) {
-            folders.remove(folder)
-            filterFolders(searchEditText.text.toString())
-            Snackbar.make(binding.root, "Folder '${folder.name}' deleted", Snackbar.LENGTH_SHORT).show()
-        } else {
-            Snackbar.make(binding.root, "Failed to delete folder '${folder.name}'", Snackbar.LENGTH_SHORT).show()
-        }
-    }
-
     override fun onResume() {
         super.onResume()
-        // Refresh folder list to get updated thumbnails
+        // Refresh folder list
         folders = Folder.getFolders(this).toMutableList()
         filterFolders(searchEditText.text.toString())
     }
