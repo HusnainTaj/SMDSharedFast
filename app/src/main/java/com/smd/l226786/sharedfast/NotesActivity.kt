@@ -5,21 +5,26 @@ import android.content.Intent
 import android.net.Uri
 import android.os.Bundle
 import android.provider.MediaStore
+import android.view.View
+import android.view.ViewGroup
 import android.widget.ArrayAdapter
 import android.widget.Button
+import android.widget.ImageView
 import android.widget.ListView
+import android.widget.TextView
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.FileProvider
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
+import com.bumptech.glide.Glide
 import com.smd.l226786.sharedfast.models.Notes
 import java.io.File
 
 class NotesActivity : AppCompatActivity() {
 
-    private lateinit var notesAdapter: ArrayAdapter<Notes>
+    private lateinit var notesAdapter: NotesAdapter
     private var folderId: Int = -1
 
     private val pickImagesLauncher = registerForActivityResult(ActivityResultContracts.GetMultipleContents()) { uris: List<Uri> ->
@@ -62,6 +67,25 @@ class NotesActivity : AppCompatActivity() {
 
     private lateinit var currentPhotoUri: Uri
 
+    private inner class NotesAdapter(private val notes: List<Notes>) : ArrayAdapter<Notes>(this@NotesActivity, 0, notes) {
+        override fun getView(position: Int, convertView: View?, parent: ViewGroup): View {
+            val view = convertView ?: layoutInflater.inflate(R.layout.item_note, parent, false)
+            val note = getItem(position)
+
+            val imageView = view.findViewById<ImageView>(R.id.note_image)
+            val titleView = view.findViewById<TextView>(R.id.note_title)
+            val timestampView = view.findViewById<TextView>(R.id.note_timestamp)
+
+            note?.let {
+                Glide.with(this@NotesActivity).load(it.image).into(imageView)
+                titleView.text = it.title
+                timestampView.text = android.text.format.DateFormat.format("yyyy-MM-dd hh:mm:ss", it.timestamp)
+            }
+
+            return view
+        }
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
@@ -75,7 +99,7 @@ class NotesActivity : AppCompatActivity() {
         folderId = intent.getIntExtra("FOLDER_ID", -1)
         val filteredNotes = Notes.notesList.filter { it.folderId == folderId }
 
-        notesAdapter = ArrayAdapter(this, android.R.layout.simple_list_item_1, filteredNotes)
+        notesAdapter = NotesAdapter(filteredNotes)
         val listView: ListView = findViewById(R.id.notes_list_view)
         listView.adapter = notesAdapter
 
