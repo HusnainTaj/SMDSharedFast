@@ -13,7 +13,7 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_margin="8dp"
-        android:hint="Search notes..."
+        android:hint="Search Notes..."
         android:padding="8dp"
         android:inputType="text"
         android:imeOptions="actionSearch"
@@ -24,7 +24,7 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:orientation="horizontal"
-        android:padding="16dp">
+        android:padding="8dp">
 
         <Button
             android:id="@+id/import_files_button"
@@ -60,5 +60,5 @@
         android:id="@+id/notes_list_view"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:padding="16dp" />
+        android:padding="8dp" />
 </LinearLayout>

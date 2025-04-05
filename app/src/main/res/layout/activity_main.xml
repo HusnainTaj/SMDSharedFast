@@ -17,12 +17,12 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_margin="8dp"
-        android:hint="Search folders..."
+        android:hint="Search Folders..."
         android:padding="8dp"
         android:inputType="text"
         android:imeOptions="actionSearch"
         android:drawableStart="@android:drawable/ic_menu_search"
-        android:drawablePadding="5dp" />
+        android:drawablePadding="5dp"/>
 
     <GridView
         android:id="@+id/folder_grid_view"
