@@ -33,39 +33,19 @@ data class Notes(
             return notes
         }
 
-        fun createNote(context: Context, folderName: String, title: String, imageData: ByteArray): Notes? {
-            val folderUri = MediaStore.Images.Media.EXTERNAL_CONTENT_URI
-            val folderPath = context.getExternalFilesDir(null)?.absolutePath + "/$folderName"
-            val folder = File(folderPath)
-            if (!folder.exists()) folder.mkdirs()
-
-            val imageFile = File(folder, "$title.jpg")
-            FileOutputStream(imageFile).use { it.write(imageData) }
-
-            val values = ContentValues().apply {
-                put(MediaStore.Images.Media.DISPLAY_NAME, title)
-                put(MediaStore.Images.Media.MIME_TYPE, "image/jpeg")
-                put(MediaStore.Images.Media.RELATIVE_PATH, folderPath)
-                put(MediaStore.Images.Media.IS_PENDING, 1)
+        fun createNote(
+            context: Context,
+            folderName: String,
+            title: String,
+            fileData: ByteArray,
+            mimeType: String = "image/jpeg",
+            extension: String = "jpg"
+        ): Notes? {
+            val folderUri = if (mimeType.startsWith("image")) {
+                MediaStore.Images.Media.EXTERNAL_CONTENT_URI
+            } else {
+                MediaStore.Files.getContentUri("external")
             }
-
-            val uri: Uri? = context.contentResolver.insert(folderUri, values)
-            uri?.let {
-                context.contentResolver.openOutputStream(it).use { outputStream ->
-                    outputStream?.write(imageData)
-                }
-                values.clear()
-                values.put(MediaStore.Images.Media.IS_PENDING, 0)
-                context.contentResolver.update(it, values, null, null)
-
-                val id = imageFile.hashCode()
-                return Notes(id, title, System.currentTimeMillis(), imageFile.absolutePath, folderName)
-            }
-            return null
-        }
-
-        fun createNoteWithFile(context: Context, folderName: String, title: String, fileData: ByteArray, mimeType: String, extension: String): Notes? {
-            val folderUri = MediaStore.Files.getContentUri("external")
             val folderPath = context.getExternalFilesDir(null)?.absolutePath + "/$folderName"
             val folder = File(folderPath)
             if (!folder.exists()) folder.mkdirs()
@@ -96,3 +76,4 @@ data class Notes(
         }
     }
 }
+

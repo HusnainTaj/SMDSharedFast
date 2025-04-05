@@ -48,7 +48,9 @@ class NotesActivity : AppCompatActivity() {
                     context = this,
                     folderName = folderName,
                     title = "Note ${System.currentTimeMillis()}",
-                    imageData = imageData
+                    fileData = imageData,
+                    mimeType = "image/jpeg",
+                    extension = "jpg"
                 )
 
                 newNote?.let { 
@@ -69,7 +71,9 @@ class NotesActivity : AppCompatActivity() {
                 context = this,
                 folderName = folderName,
                 title = "Note ${System.currentTimeMillis()}",
-                imageData = imageData
+                fileData = imageData,
+                mimeType = "image/jpeg",
+                extension = "jpg"
             )
 
             newNote?.let { 
@@ -88,7 +92,7 @@ class NotesActivity : AppCompatActivity() {
                 val mimeType = contentResolver.getType(uri) ?: "application/octet-stream"
                 val extension = MimeTypeMap.getSingleton().getExtensionFromMimeType(mimeType) ?: "bin"
 
-                val newNote = Notes.createNoteWithFile(
+                val newNote = Notes.createNote(
                     context = this,
                     folderName = folderName,
                     title = "File ${System.currentTimeMillis()}",
