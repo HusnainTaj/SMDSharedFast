@@ -4,6 +4,8 @@ import android.app.AlertDialog
 import android.content.Intent
 import android.net.Uri
 import android.os.Bundle
+import android.text.Editable
+import android.text.TextWatcher
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -32,11 +34,13 @@ class MainActivity : AppCompatActivity() {
     private lateinit var binding: ActivityMainBinding
     private lateinit var folderAdapter: FolderAdapter
     private var folders = mutableListOf<Folder>()
+    private var filteredFolders = mutableListOf<Folder>()
+    private lateinit var searchEditText: EditText
 
     private inner class FolderAdapter : BaseAdapter() {
-        override fun getCount(): Int = folders.size
+        override fun getCount(): Int = filteredFolders.size
 
-        override fun getItem(position: Int): Any = folders[position]
+        override fun getItem(position: Int): Any = filteredFolders[position]
 
         override fun getItemId(position: Int): Long = position.toLong()
 
@@ -66,15 +70,18 @@ class MainActivity : AppCompatActivity() {
         binding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
-        setSupportActionBar(binding.toolbar)
-
         folders = Folder.getFolders(this).toMutableList()
+        filteredFolders = folders.toMutableList()
+        
         folderAdapter = FolderAdapter()
         val gridView: GridView = findViewById(R.id.folder_grid_view)
         gridView.adapter = folderAdapter
 
+        searchEditText = findViewById(R.id.search_edit_text)
+        setupSearchEditText()
+
         gridView.setOnItemClickListener { _, _, position, _ ->
-            val selectedFolder = folders[position]
+            val selectedFolder = filteredFolders[position]
             val intent = Intent(this, NotesActivity::class.java).apply {
                 putExtra("FOLDER_NAME", selectedFolder.name)
             }
@@ -82,7 +89,7 @@ class MainActivity : AppCompatActivity() {
         }
 
         gridView.setOnItemLongClickListener { _, _, position, _ ->
-            val selectedFolder = folders[position]
+            val selectedFolder = filteredFolders[position]
             showFolderOptionsDialog(selectedFolder)
             true
         }
@@ -90,6 +97,39 @@ class MainActivity : AppCompatActivity() {
         binding.fab.setOnClickListener { view ->
             showCreateFolderDialog()
         }
+    }
+
+    private fun setupSearchEditText() {
+        searchEditText.addTextChangedListener(object : TextWatcher {
+            override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {
+                // Not needed
+            }
+
+            override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {
+                filterFolders(s.toString())
+            }
+
+            override fun afterTextChanged(s: Editable?) {
+                // Not needed
+            }
+        })
+    }
+
+    private fun filterFolders(query: String?) {
+        filteredFolders.clear()
+        
+        if (query.isNullOrBlank()) {
+            filteredFolders.addAll(folders)
+        } else {
+            val searchText = query.toLowerCase().trim()
+            folders.forEach { folder ->
+                if (folder.name.toLowerCase().contains(searchText)) {
+                    filteredFolders.add(folder)
+                }
+            }
+        }
+        
+        folderAdapter.notifyDataSetChanged()
     }
 
     private fun showCreateFolderDialog() {
@@ -108,7 +148,7 @@ class MainActivity : AppCompatActivity() {
                 val newFolder = Folder.createFolder(this, folderName)
                 newFolder?.let {
                     folders.add(it)
-                    folderAdapter.notifyDataSetChanged()
+                    filterFolders(searchEditText.text.toString())
                     Snackbar.make(binding.root, "Folder '$folderName' created", Snackbar.LENGTH_SHORT).show()
                 }
             }
@@ -151,7 +191,7 @@ class MainActivity : AppCompatActivity() {
         val folderPath = File(getExternalFilesDir(null), folder.name)
         if (folderPath.deleteRecursively()) {
             folders.remove(folder)
-            folderAdapter.notifyDataSetChanged()
+            filterFolders(searchEditText.text.toString())
             Snackbar.make(binding.root, "Folder '${folder.name}' deleted", Snackbar.LENGTH_SHORT).show()
         } else {
             Snackbar.make(binding.root, "Failed to delete folder '${folder.name}'", Snackbar.LENGTH_SHORT).show()
@@ -180,6 +220,6 @@ class MainActivity : AppCompatActivity() {
         super.onResume()
         // Refresh folder list to get updated thumbnails
         folders = Folder.getFolders(this).toMutableList()
-        folderAdapter.notifyDataSetChanged()
+        filterFolders(searchEditText.text.toString())
     }
 }

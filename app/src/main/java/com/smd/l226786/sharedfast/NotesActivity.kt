@@ -5,10 +5,13 @@ import android.content.Intent
 import android.net.Uri
 import android.os.Bundle
 import android.provider.MediaStore
+import android.text.Editable
+import android.text.TextWatcher
 import android.view.View
 import android.view.ViewGroup
 import android.widget.ArrayAdapter
 import android.widget.Button
+import android.widget.EditText
 import android.widget.ImageView
 import android.widget.ListView
 import android.widget.TextView
@@ -28,6 +31,9 @@ class NotesActivity : AppCompatActivity() {
 
     private lateinit var notesAdapter: NotesAdapter
     private var folderName: String = ""
+    private var allNotes = listOf<Notes>()
+    private var filteredNotes = mutableListOf<Notes>()
+    private lateinit var searchEditText: EditText
 
     private val pickImagesLauncher = registerForActivityResult(ActivityResultContracts.GetMultipleContents()) { uris: List<Uri> ->
         if (uris.isNotEmpty()) {
@@ -45,10 +51,7 @@ class NotesActivity : AppCompatActivity() {
                 )
 
                 newNote?.let { 
-                    val updatedNotes = Notes.getNotes(this, folderName)
-                    notesAdapter.clear()
-                    notesAdapter.addAll(updatedNotes)
-                    notesAdapter.notifyDataSetChanged()
+                    refreshNotesList()
                 }
             }
         }
@@ -69,17 +72,14 @@ class NotesActivity : AppCompatActivity() {
             )
 
             newNote?.let { 
-                val updatedNotes = Notes.getNotes(this, folderName)
-                notesAdapter.clear()
-                notesAdapter.addAll(updatedNotes)
-                notesAdapter.notifyDataSetChanged()
+                refreshNotesList()
             }
         }
     }
 
     private lateinit var currentPhotoUri: Uri
 
-    private inner class NotesAdapter(private val notes: List<Notes>) : ArrayAdapter<Notes>(this@NotesActivity, 0, notes) {
+    private inner class NotesAdapter(notes: List<Notes>) : ArrayAdapter<Notes>(this@NotesActivity, 0, notes) {
         override fun getView(position: Int, convertView: View?, parent: ViewGroup): View {
             val view = convertView ?: layoutInflater.inflate(R.layout.item_note, parent, false)
             val note = getItem(position)
@@ -109,11 +109,15 @@ class NotesActivity : AppCompatActivity() {
         }
 
         folderName = intent.getStringExtra("FOLDER_NAME") ?: ""
-        val filteredNotes = Notes.getNotes(this, folderName)
+        allNotes = Notes.getNotes(this, folderName)
+        filteredNotes = allNotes.toMutableList()
 
         notesAdapter = NotesAdapter(filteredNotes)
         val listView: ListView = findViewById(R.id.notes_list_view)
         listView.adapter = notesAdapter
+
+        searchEditText = findViewById(R.id.search_notes_edit_text)
+        setupSearchEditText()
 
         val importImagesButton: Button = findViewById(R.id.import_images_button)
         importImagesButton.setOnClickListener {
@@ -129,5 +133,42 @@ class NotesActivity : AppCompatActivity() {
             currentPhotoUri = FileProvider.getUriForFile(this, "com.smd.l226786.sharedfast.provider", photoFile)
             captureImageLauncher.launch(currentPhotoUri)
         }
+    }
+    
+    private fun setupSearchEditText() {
+        searchEditText.addTextChangedListener(object : TextWatcher {
+            override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {
+                // Not needed
+            }
+
+            override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {
+                filterNotes(s.toString())
+            }
+
+            override fun afterTextChanged(s: Editable?) {
+                // Not needed
+            }
+        })
+    }
+    
+    private fun filterNotes(query: String?) {
+        notesAdapter.clear()
+        
+        if (query.isNullOrBlank()) {
+            notesAdapter.addAll(allNotes)
+        } else {
+            val searchText = query.toLowerCase().trim()
+            val filtered = allNotes.filter { note ->
+                note.title.toLowerCase().contains(searchText)
+            }
+            notesAdapter.addAll(filtered)
+        }
+        
+        notesAdapter.notifyDataSetChanged()
+    }
+    
+    private fun refreshNotesList() {
+        allNotes = Notes.getNotes(this, folderName)
+        filterNotes(searchEditText.text.toString())
     }
 }

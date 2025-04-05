@@ -11,17 +11,18 @@
        android:layout_width="match_parent"
        android:layout_height="match_parent"
          android:orientation="vertical">
-    <com.google.android.material.appbar.AppBarLayout
+    
+    <EditText
+        android:id="@+id/search_edit_text"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:fitsSystemWindows="true">
-
-        <com.google.android.material.appbar.MaterialToolbar
-            android:id="@+id/toolbar"
-            android:layout_width="match_parent"
-            android:layout_height="?attr/actionBarSize" />
-
-    </com.google.android.material.appbar.AppBarLayout>
+        android:layout_margin="8dp"
+        android:hint="Search folders..."
+        android:padding="8dp"
+        android:inputType="text"
+        android:imeOptions="actionSearch"
+        android:drawableStart="@android:drawable/ic_menu_search"
+        android:drawablePadding="5dp" />
 
     <GridView
         android:id="@+id/folder_grid_view"
@@ -29,10 +30,8 @@
         android:layout_height="match_parent"
         android:layout_weight="1"
         android:fitsSystemWindows="true"
-        android:padding="16dp"
+        android:padding="8dp"
         android:numColumns="2"
-        android:verticalSpacing="16dp"
-        android:horizontalSpacing="16dp"
         android:stretchMode="columnWidth" />
    </LinearLayout>
 
