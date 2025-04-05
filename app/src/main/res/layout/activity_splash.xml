@@ -11,6 +11,7 @@
         android:id="@+id/splash_logo"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:src="@mipmap/ic_launcher"
-        />
+        android:scaleX="2"
+        android:scaleY="2"
+        android:src="@mipmap/ic_launcher" />
 </RelativeLayout>
