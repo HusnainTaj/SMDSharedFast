@@ -1,6 +1,7 @@
 package com.smd.l226786.sharedfast
 
 import android.app.AlertDialog
+import android.content.Intent
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.widget.ArrayAdapter
@@ -34,6 +35,14 @@ class MainActivity : AppCompatActivity() {
         folderAdapter = ArrayAdapter(this, android.R.layout.simple_list_item_1, Folder.folderList)
         val listView: ListView = findViewById(R.id.folder_list_view)
         listView.adapter = folderAdapter
+
+        listView.setOnItemClickListener { _, _, position, _ ->
+            val selectedFolder = Folder.folderList[position]
+            val intent = Intent(this, NotesActivity::class.java).apply {
+                putExtra("FOLDER_ID", selectedFolder.id)
+            }
+            startActivity(intent)
+        }
 
         binding.fab.setOnClickListener { view ->
             showCreateFolderDialog()
