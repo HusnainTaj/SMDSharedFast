@@ -9,6 +9,7 @@ import android.text.Editable
 import android.text.TextWatcher
 import android.view.View
 import android.view.ViewGroup
+import android.webkit.MimeTypeMap
 import android.widget.ArrayAdapter
 import android.widget.Button
 import android.widget.EditText
@@ -77,6 +78,32 @@ class NotesActivity : AppCompatActivity() {
         }
     }
 
+    private val pickFilesLauncher = registerForActivityResult(ActivityResultContracts.GetMultipleContents()) { uris: List<Uri> ->
+        if (uris.isNotEmpty()) {
+            uris.forEach { uri ->
+                val inputStream: InputStream? = contentResolver.openInputStream(uri)
+                val byteArrayOutputStream = ByteArrayOutputStream()
+                inputStream?.copyTo(byteArrayOutputStream)
+                val fileData = byteArrayOutputStream.toByteArray()
+                val mimeType = contentResolver.getType(uri) ?: "application/octet-stream"
+                val extension = MimeTypeMap.getSingleton().getExtensionFromMimeType(mimeType) ?: "bin"
+
+                val newNote = Notes.createNoteWithFile(
+                    context = this,
+                    folderName = folderName,
+                    title = "File ${System.currentTimeMillis()}",
+                    fileData = fileData,
+                    mimeType = mimeType,
+                    extension = extension
+                )
+
+                newNote?.let { 
+                    refreshNotesList()
+                }
+            }
+        }
+    }
+
     private lateinit var currentPhotoUri: Uri
 
     private inner class NotesAdapter(notes: List<Notes>) : ArrayAdapter<Notes>(this@NotesActivity, 0, notes) {
@@ -132,6 +159,11 @@ class NotesActivity : AppCompatActivity() {
             }
             currentPhotoUri = FileProvider.getUriForFile(this, "com.smd.l226786.sharedfast.provider", photoFile)
             captureImageLauncher.launch(currentPhotoUri)
+        }
+
+        val importFilesButton: Button = findViewById(R.id.import_files_button)
+        importFilesButton.setOnClickListener {
+            pickFilesLauncher.launch("*/*")
         }
     }
     

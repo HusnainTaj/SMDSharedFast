@@ -174,7 +174,7 @@ class MainActivity : AppCompatActivity() {
 
     private fun shareFolder(folder: Folder) {
         val folderPath = File(getExternalFilesDir(null), folder.name)
-        val imageUris = folderPath.listFiles { file -> file.extension == "jpg" }?.map { file ->
+        val imageUris = folderPath.listFiles()?.map { file ->
             FileProvider.getUriForFile(this, "com.smd.l226786.sharedfast.provider", file)
         } ?: emptyList()
 
