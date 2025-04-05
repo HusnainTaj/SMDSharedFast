@@ -7,6 +7,7 @@ import android.os.Bundle
 import android.provider.MediaStore
 import android.text.Editable
 import android.text.TextWatcher
+import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.webkit.MimeTypeMap
@@ -18,11 +19,13 @@ import android.widget.ListView
 import android.widget.TextView
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.FileProvider
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
 import com.bumptech.glide.Glide
+import com.google.android.material.snackbar.Snackbar
 import com.smd.l226786.sharedfast.models.Notes
 import java.io.ByteArrayOutputStream
 import java.io.File
@@ -169,6 +172,12 @@ class NotesActivity : AppCompatActivity() {
         importFilesButton.setOnClickListener {
             pickFilesLauncher.launch("*/*")
         }
+
+        listView.setOnItemLongClickListener { _, _, position, _ ->
+            val selectedNote = filteredNotes[position]
+            showNoteOptionsDialog(selectedNote)
+            true
+        }
     }
     
     private fun setupSearchEditText() {
@@ -206,5 +215,65 @@ class NotesActivity : AppCompatActivity() {
     private fun refreshNotesList() {
         allNotes = Notes.getNotes(this, folderName)
         filterNotes(searchEditText.text.toString())
+    }
+
+    private fun showNoteOptionsDialog(note: Notes) {
+        val options = arrayOf("Rename", "Delete")
+        val builder = AlertDialog.Builder(this)
+        builder.setTitle("Note Options")
+        builder.setItems(options) { dialog, which ->
+            when (which) {
+                0 -> showRenameNoteDialog(note)
+                1 -> deleteNote(note)
+            }
+            dialog.dismiss()
+        }
+        builder.show()
+    }
+
+    private fun showRenameNoteDialog(note: Notes) {
+        val builder = AlertDialog.Builder(this)
+        builder.setTitle("Rename Note")
+
+        val viewInflated = LayoutInflater.from(this).inflate(R.layout.dialog_create_folder, null, false)
+        val input = viewInflated.findViewById<EditText>(R.id.input_folder_name)
+        input.setText(note.title.substringBeforeLast('.'))
+
+        builder.setView(viewInflated)
+
+        builder.setPositiveButton(android.R.string.ok) { dialog, _ ->
+            dialog.dismiss()
+            val newNoteTitle = input.text.toString()
+            if (newNoteTitle.isNotEmpty() && newNoteTitle != note.title) {
+                renameNote(note, newNoteTitle)
+            }
+        }
+        builder.setNegativeButton(android.R.string.cancel) { dialog, _ -> dialog.cancel() }
+
+        builder.show()
+    }
+
+    private fun renameNote(note: Notes, newNoteTitle: String) {
+        val oldNoteFile = File(note.image)
+        val newNoteFile = File(oldNoteFile.parent, "$newNoteTitle.${oldNoteFile.extension}")
+        if (oldNoteFile.renameTo(newNoteFile)) {
+            note.title = newNoteTitle
+            note.image = newNoteFile.absolutePath
+            refreshNotesList()
+            Snackbar.make(findViewById(R.id.main), "Note renamed to '$newNoteTitle'", Snackbar.LENGTH_SHORT).show()
+        } else {
+            Snackbar.make(findViewById(R.id.main), "Failed to rename note", Snackbar.LENGTH_SHORT).show()
+        }
+    }
+
+    private fun deleteNote(note: Notes) {
+        val noteFile = File(note.image)
+        if (noteFile.delete()) {
+            allNotes = allNotes.filter { it.id != note.id }
+            filterNotes(searchEditText.text.toString())
+            Snackbar.make(findViewById(R.id.main), "Note '${note.title}' deleted", Snackbar.LENGTH_SHORT).show()
+        } else {
+            Snackbar.make(findViewById(R.id.main), "Failed to delete note '${note.title}'", Snackbar.LENGTH_SHORT).show()
+        }
     }
 }

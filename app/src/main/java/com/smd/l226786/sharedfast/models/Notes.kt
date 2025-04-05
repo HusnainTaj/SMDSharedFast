@@ -10,9 +10,9 @@ import java.io.FileOutputStream
 
 data class Notes(
     val id: Int,
-    val title: String,
+    var title: String,
     val timestamp: Long,
-    val image: String,
+    var image: String,
     val folderName: String
 ) {
     companion object {
