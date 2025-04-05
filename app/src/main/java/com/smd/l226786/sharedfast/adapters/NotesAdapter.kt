@@ -20,7 +20,7 @@ class NotesAdapter(context: Context, notes: List<Notes>) : ArrayAdapter<Notes>(c
         val timestampView = view.findViewById<TextView>(R.id.note_timestamp)
 
         note?.let {
-            Glide.with(context).load(it.image).into(imageView)
+            Glide.with(context).load(it.filePath).into(imageView)
             titleView.text = it.title
             timestampView.text = android.text.format.DateFormat.format("yyyy-MM-dd hh:mm:ss", it.timestamp)
         }

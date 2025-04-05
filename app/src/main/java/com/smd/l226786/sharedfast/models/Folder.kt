@@ -27,7 +27,7 @@ data class Folder(var name: String) {
 
         fun getThumbnail(context: Context, folderName: String): String? {
             val notes = Notes.getNotes(context, folderName)
-            return if (notes.isNotEmpty()) notes[0].image else null
+            return if (notes.isNotEmpty()) notes[0].filePath else null
         }
 
         fun renameFolder(context: Context, folder: Folder, newFolderName: String): Boolean {

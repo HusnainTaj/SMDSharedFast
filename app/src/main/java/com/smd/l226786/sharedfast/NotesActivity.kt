@@ -1,22 +1,15 @@
 package com.smd.l226786.sharedfast
 
-import android.app.Activity
 import android.content.Intent
 import android.net.Uri
 import android.os.Bundle
-import android.provider.MediaStore
 import android.text.Editable
 import android.text.TextWatcher
 import android.view.LayoutInflater
-import android.view.View
-import android.view.ViewGroup
 import android.webkit.MimeTypeMap
-import android.widget.ArrayAdapter
 import android.widget.Button
 import android.widget.EditText
-import android.widget.ImageView
 import android.widget.ListView
-import android.widget.TextView
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AlertDialog
@@ -24,7 +17,6 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.FileProvider
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
-import com.bumptech.glide.Glide
 import com.google.android.material.snackbar.Snackbar
 import com.smd.l226786.sharedfast.models.Notes
 import com.smd.l226786.sharedfast.adapters.NotesAdapter
@@ -160,8 +152,13 @@ class NotesActivity : AppCompatActivity() {
             showNoteOptionsDialog(selectedNote)
             true
         }
+
+        listView.setOnItemClickListener { _, _, position, _ ->
+            val selectedNote = filteredNotes[position]
+            openNoteFile(selectedNote)
+        }
     }
-    
+
     private fun setupSearchEditText() {
         searchEditText.addTextChangedListener(object : TextWatcher {
             override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {
@@ -177,10 +174,10 @@ class NotesActivity : AppCompatActivity() {
             }
         })
     }
-    
+
     private fun filterNotes(query: String?) {
         notesAdapter.clear()
-        
+
         if (query.isNullOrBlank()) {
             notesAdapter.addAll(allNotes)
         } else {
@@ -190,10 +187,10 @@ class NotesActivity : AppCompatActivity() {
             }
             notesAdapter.addAll(filtered)
         }
-        
+
         notesAdapter.notifyDataSetChanged()
     }
-    
+
     private fun refreshNotesList() {
         allNotes = Notes.getNotes(this, folderName)
         filterNotes(searchEditText.text.toString())
@@ -247,5 +244,14 @@ class NotesActivity : AppCompatActivity() {
 
         builder.show()
     }
-}
 
+    private fun openNoteFile(note: Notes) {
+        val noteFile = File(note.filePath)
+        val noteUri = FileProvider.getUriForFile(this, "com.smd.l226786.sharedfast.provider", noteFile)
+        val intent = Intent(Intent.ACTION_VIEW, noteUri).apply {
+            addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+        }
+
+        startActivity(intent)
+    }
+}

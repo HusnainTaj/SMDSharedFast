@@ -2,7 +2,6 @@ package com.smd.l226786.sharedfast.models
 
 import android.content.ContentValues
 import android.content.Context
-import android.database.Cursor
 import android.net.Uri
 import android.provider.MediaStore
 import java.io.File
@@ -12,7 +11,7 @@ data class Notes(
     val id: Int,
     var title: String,
     val timestamp: Long,
-    var image: String,
+    var filePath: String, // can be an image or any other file
     val folderName: String
 ) {
     companion object {
@@ -76,11 +75,11 @@ data class Notes(
         }
 
         fun renameNote(context: Context, note: Notes, newNoteTitle: String): Boolean {
-            val oldNoteFile = File(note.image)
+            val oldNoteFile = File(note.filePath)
             val newNoteFile = File(oldNoteFile.parent, "$newNoteTitle.${oldNoteFile.extension}")
             return if (oldNoteFile.renameTo(newNoteFile)) {
                 note.title = newNoteTitle
-                note.image = newNoteFile.absolutePath
+                note.filePath = newNoteFile.absolutePath
                 true
             } else {
                 false
@@ -88,7 +87,7 @@ data class Notes(
         }
 
         fun deleteNote(context: Context, note: Notes): Boolean {
-            val noteFile = File(note.image)
+            val noteFile = File(note.filePath)
             return noteFile.delete()
         }
     }
