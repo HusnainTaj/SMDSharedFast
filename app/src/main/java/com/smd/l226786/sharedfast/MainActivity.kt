@@ -2,6 +2,7 @@ package com.smd.l226786.sharedfast
 
 import android.app.AlertDialog
 import android.content.Intent
+import android.net.Uri
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.widget.ArrayAdapter
@@ -17,6 +18,8 @@ import android.view.Menu
 import android.view.MenuItem
 import com.smd.l226786.sharedfast.databinding.ActivityMainBinding
 import com.smd.l226786.sharedfast.models.Folder
+import java.io.File
+import androidx.core.net.toUri
 
 class MainActivity : AppCompatActivity() {
 
@@ -42,6 +45,12 @@ class MainActivity : AppCompatActivity() {
                 putExtra("FOLDER_NAME", selectedFolder.name)
             }
             startActivity(intent)
+        }
+
+        listView.setOnItemLongClickListener { _, _, position, _ ->
+            val selectedFolder = Folder.getFolders(this)[position]
+            showFolderOptionsDialog(selectedFolder)
+            true
         }
 
         binding.fab.setOnClickListener { view ->
@@ -73,6 +82,41 @@ class MainActivity : AppCompatActivity() {
         builder.setNegativeButton(android.R.string.cancel) { dialog, _ -> dialog.cancel() }
 
         builder.show()
+    }
+
+    private fun showFolderOptionsDialog(folder: Folder) {
+        val options = arrayOf("Share", "Delete")
+        val builder = AlertDialog.Builder(this)
+        builder.setTitle("Folder Options")
+        builder.setItems(options) { dialog, which ->
+            when (which) {
+                0 -> shareFolder(folder)
+                1 -> deleteFolder(folder)
+            }
+            dialog.dismiss()
+        }
+        builder.show()
+    }
+
+    private fun shareFolder(folder: Folder) {
+        val folderPath = File(getExternalFilesDir(null), folder.name).absolutePath
+        val shareIntent = Intent().apply {
+            action = Intent.ACTION_SEND
+            putExtra(Intent.EXTRA_STREAM, folderPath.toUri())
+            type = "application/zip"
+        }
+        startActivity(Intent.createChooser(shareIntent, "Share Folder"))
+    }
+
+    private fun deleteFolder(folder: Folder) {
+        val folderPath = File(getExternalFilesDir(null), folder.name)
+        if (folderPath.deleteRecursively()) {
+            folderAdapter.remove(folder.name)
+            folderAdapter.notifyDataSetChanged()
+            Snackbar.make(binding.root, "Folder '${folder.name}' deleted", Snackbar.LENGTH_SHORT).show()
+        } else {
+            Snackbar.make(binding.root, "Failed to delete folder '${folder.name}'", Snackbar.LENGTH_SHORT).show()
+        }
     }
 
     override fun onCreateOptionsMenu(menu: Menu): Boolean {
